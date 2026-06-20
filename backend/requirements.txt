@@ -1,0 +1,16 @@
+fastapi[standard]
+pydantic
+pydantic-settings
+uvicorn
+celery
+redis
+psycopg2-binary
+sqlalchemy
+beautifulsoup4
+requests
+PyPDF2
+langchain
+langchain-google-genai
+chromadb
+sentence-transformers
+python-multipart
