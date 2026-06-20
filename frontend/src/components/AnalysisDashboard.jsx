@@ -40,31 +40,29 @@ export default function AnalysisDashboard({ results, onReset }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto custom-scrollbar pb-6">
         
-        {/* Left Column: Score */}
         <div className="lg:col-span-1 flex flex-col gap-6">
           <div className="glass-panel p-8 flex flex-col items-center justify-center text-center">
             <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-widest mb-6">Overall Score</h3>
-            <div className="relative w-48 h-48 flex items-center justify-center">
+            <div className="relative w-40 h-40 flex items-center justify-center">
               {/* SVG Ring */}
               <svg className="absolute inset-0 w-full h-full transform -rotate-90">
                 <circle 
-                  cx="96" cy="96" r={radius} 
-                  className="stroke-zinc-800" strokeWidth="8" fill="none"
+                  cx="80" cy="80" r="70" 
+                  className="stroke-zinc-800/50" strokeWidth="8" fill="none"
                 />
                 <motion.circle 
-                  cx="96" cy="96" r={radius}
-                  className={`${ringColor} transition-all duration-1000 ease-out drop-shadow-[0_0_10px_rgba(currentColor,0.5)]`}
+                  cx="80" cy="80" r="70"
+                  className={`${ringColor} transition-all duration-1000 ease-out drop-shadow-[0_0_12px_rgba(currentColor,0.4)]`}
                   strokeWidth="8" fill="none" strokeLinecap="round"
-                  initial={{ strokeDashoffset: circumference }}
-                  animate={{ strokeDashoffset }}
-                  style={{ strokeDasharray: circumference }}
+                  initial={{ strokeDashoffset: 2 * Math.PI * 70 }}
+                  animate={{ strokeDashoffset: (2 * Math.PI * 70) - ((Math.round(match_score) / 100) * (2 * Math.PI * 70)) }}
+                  style={{ strokeDasharray: 2 * Math.PI * 70 }}
                 />
               </svg>
-              <div className="flex flex-col items-center justify-center">
-                <span className={`text-5xl font-bold tracking-tighter ${scoreColor}`}>
-                  {match_score}%
+              <div className="flex flex-col items-center justify-center z-10">
+                <span className={`text-4xl font-black tracking-tight ${scoreColor}`}>
+                  {Math.round(match_score)}%
                 </span>
-                <span className="text-xs text-zinc-500 mt-1 font-medium uppercase tracking-widest">Match</span>
               </div>
             </div>
           </div>

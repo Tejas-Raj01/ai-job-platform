@@ -101,29 +101,41 @@ Respond ONLY with the search string and nothing else:'''
         prompt = PromptTemplate(
             input_variables=["resume", "jd"],
             template='''Compare this Resume with this JD. What specific keywords, projects, or phrasing are missing from the resume to make it a 100% match for this exact job?
-Return the result strictly as a valid JSON object with the key "missing_skills" which is a list of strings (each string is a clear, actionable bullet point).
+Return the result strictly as a valid JSON object with exactly two keys:
+1. "missing_skills": a list of strings (short, specific missing keywords/skills).
+2. "recommendations": a list of strings (actionable advice to improve the resume).
+Do NOT include markdown formatting like ```json. Return ONLY the raw JSON string.
 
 Resume:
 {resume}
 
 Job Description:
-{jd}
-
-Output JSON only:'''
+{jd}'''
         )
         try:
             chain = prompt | self.llm
-            response = chain.invoke({"resume": resume_text, "jd": jd_text})
+            response = chain.invoke({"resume": resume_text[:5000], "jd": jd_text[:5000]})
             text = response.content.strip()
-            if text.startswith("```json"):
-                text = text[7:-3]
-            elif text.startswith("```"):
-                text = text[3:-3]
             
-            result = json.loads(text.strip())
-            return result
+            # Robust cleaning
+            if text.startswith("```json"):
+                text = text[7:]
+            if text.startswith("```"):
+                text = text[3:]
+            if text.endswith("```"):
+                text = text[:-3]
+                
+            text = text.strip()
+            result = json.loads(text)
+            return {
+                "missing_skills": result.get("missing_skills", []),
+                "recommendations": result.get("recommendations", [])
+            }
         except Exception as e:
             print(f"LLM gap analysis error: {e}")
-            return {"missing_skills": ["Error analyzing gaps"]}
+            return {
+                "missing_skills": ["Could not parse missing skills from AI."],
+                "recommendations": ["Error analyzing gaps. The job description might be too long or the AI response was malformed."]
+            }
 
 ai_matcher = AIMatcher()
