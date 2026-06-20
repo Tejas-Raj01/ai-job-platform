@@ -14,3 +14,4 @@ This is an end-to-end platform to match user resumes with job descriptions using
 2. Copy `.env.example` to `.env` and fill in your details.
 3. Run `docker-compose up -d` to start the backend, database, redis, and workers.
 4. Navigate to `frontend` and run `npm install` then `npm run dev`.
+# ai-job-platofrm
