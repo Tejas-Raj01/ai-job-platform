@@ -17,6 +17,13 @@ async def upload_resume(user_id: int, file: UploadFile = File(...), db: Session 
     contents = await file.read()
     parsed_text = document_processor.extract_text_from_pdf(contents)
     
+    # Ensure user exists (Mock auth)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        user = User(id=user_id, email=f"user{user_id}@example.com", name="Test User")
+        db.add(user)
+        db.commit()
+    
     # Save to DB
     resume = Resume(
         user_id=user_id,
