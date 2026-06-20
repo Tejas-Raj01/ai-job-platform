@@ -13,6 +13,38 @@ export default function App() {
   const [loadingMsg, setLoadingMsg] = useState("");
   const [results, setResults] = useState(null);
   const [topJobs, setTopJobs] = useState([]);
+  const [customJd, setCustomJd] = useState("");
+
+  const handleCustomJdMatch = async () => {
+    if (!resumeId || !customJd.trim()) return;
+    setLoading(true);
+    setLoadingMsg("Analyzing your custom job description...");
+    try {
+      const response = await fetch(`http://localhost:8000/api/resumes/${resumeId}/match_custom`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          title: "Custom Target Job", 
+          company: "Custom Target Company", 
+          jd_text: customJd 
+        })
+      });
+      if (!response.ok) throw new Error('Failed to match custom JD');
+      const data = await response.json();
+      
+      setTopJobs(data.matches || []);
+      if (data.matches && data.matches.length > 0) {
+        const bestJobId = data.matches[0].job_id;
+        setJobId(bestJobId);
+        handleMatch(bestJobId, data.matches[0].match_score);
+      } else {
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error(error);
+      setLoading(false);
+    }
+  };
 
   const handleFindJobs = async () => {
     if (!resumeId) return;
@@ -159,7 +191,7 @@ export default function App() {
                   }} resumeId={resumeId} />
                 </div>
 
-                <div className="flex justify-center">
+                <div className="flex justify-center mb-8">
                   <button 
                     onClick={handleFindJobs}
                     disabled={!resumeId}
@@ -171,8 +203,31 @@ export default function App() {
                     `}
                   >
                     <Search className="w-5 h-5" />
-                    <span>Find Matching Jobs</span>
+                    <span>Auto-Find Jobs from Internet</span>
                     <ChevronRight className={`w-5 h-5 transition-transform ${(resumeId) ? 'group-hover:translate-x-1' : ''}`} />
+                  </button>
+                </div>
+
+                <div className="relative flex items-center py-5">
+                  <div className="flex-grow border-t border-surfaceBorder"></div>
+                  <span className="flex-shrink-0 mx-4 text-zinc-500 text-sm font-medium tracking-widest">OR TARGET A SPECIFIC ROLE</span>
+                  <div className="flex-grow border-t border-surfaceBorder"></div>
+                </div>
+
+                <div className="glass-panel p-6 mt-2">
+                  <p className="text-sm text-zinc-400 mb-3 font-medium">Paste a specific Job Description (e.g. from Google Careers)</p>
+                  <textarea
+                    className="w-full h-32 bg-surface border border-surfaceBorder rounded-lg p-3 text-sm text-zinc-300 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-colors resize-none mb-3 custom-scrollbar"
+                    placeholder="Paste job description text here..."
+                    value={customJd}
+                    onChange={(e) => setCustomJd(e.target.value)}
+                  />
+                  <button
+                    onClick={handleCustomJdMatch}
+                    disabled={!resumeId || !customJd.trim()}
+                    className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 ${resumeId && customJd.trim() ? 'bg-zinc-100 text-zinc-900 hover:bg-white' : 'bg-surface border border-surfaceBorder text-zinc-500 cursor-not-allowed'}`}
+                  >
+                    Analyze Custom Job
                   </button>
                 </div>
               </motion.div>

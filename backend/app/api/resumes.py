@@ -1,6 +1,7 @@
 import json
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from app.core.database import get_db
 from app.models.domain import User, Resume, JobPosting, AnalysisResult
 from app.services.pdf_parser import document_processor
@@ -8,6 +9,11 @@ from app.services.ai_matcher import ai_matcher
 from app.services.scraper import dynamic_scraper
 
 router = APIRouter()
+
+class CustomJDRequest(BaseModel):
+    title: str = "Custom Target Job"
+    company: str = "Target Company"
+    jd_text: str
 
 @router.post("/upload")
 async def upload_resume(user_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
@@ -113,4 +119,30 @@ def analyze_and_fetch_jobs(resume_id: int, db: Session = Depends(get_db)):
             match["url"] = job.url
             match["short_description"] = job.description[:150] + "..." if job.description else "No description available."
             
+    return {"matches": matches}
+
+@router.post("/{resume_id}/match_custom")
+def match_custom_job(resume_id: int, request: CustomJDRequest, db: Session = Depends(get_db)):
+    """Matches a resume against a specific custom job description pasted by the user."""
+    resume = db.query(Resume).filter(Resume.id == resume_id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+        
+    # Save the custom JD to DB to get an ID
+    job = JobPosting(
+        title=request.title[:100],
+        company=request.company[:100],
+        description=request.jd_text,
+        url="custom-paste"
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+    
+    # Rank them against the resume (will be just 1 job)
+    matches = ai_matcher.find_top_jobs(resume.parsed_text, [job], top_k=1)
+    
+    if matches:
+        matches[0]["short_description"] = job.description[:150] + "..." if job.description else "Custom Job Description"
+        
     return {"matches": matches}

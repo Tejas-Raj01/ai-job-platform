@@ -1,4 +1,5 @@
 import json
+import re
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -117,24 +118,22 @@ Job Description:
             response = chain.invoke({"resume": resume_text[:5000], "jd": jd_text[:5000]})
             text = response.content.strip()
             
-            # Robust cleaning
-            if text.startswith("```json"):
-                text = text[7:]
-            if text.startswith("```"):
-                text = text[3:]
-            if text.endswith("```"):
-                text = text[:-3]
+            # Robust JSON extraction using regex
+            json_match = re.search(r'\{.*\}', text, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(0)
+                result = json.loads(json_str)
+                return {
+                    "missing_skills": result.get("missing_skills", []),
+                    "recommendations": result.get("recommendations", [])
+                }
+            else:
+                raise ValueError(f"No JSON object found in response: {text[:100]}...")
                 
-            text = text.strip()
-            result = json.loads(text)
-            return {
-                "missing_skills": result.get("missing_skills", []),
-                "recommendations": result.get("recommendations", [])
-            }
         except Exception as e:
             print(f"LLM gap analysis error: {e}")
             return {
-                "missing_skills": ["Could not parse missing skills from AI."],
+                "missing_skills": ["Could not parse missing skills from AI.", "Check the console logs for exact error."],
                 "recommendations": ["Error analyzing gaps. The job description might be too long or the AI response was malformed."]
             }
 
