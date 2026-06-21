@@ -2,6 +2,7 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+import uuid
 from app.core.database import get_db
 from app.models.domain import User, Resume, JobPosting, AnalysisResult
 from app.services.pdf_parser import document_processor
@@ -42,7 +43,7 @@ async def upload_resume(user_id: int, file: UploadFile = File(...), db: Session 
     db.commit()
     db.refresh(resume)
     
-    return {"resume_id": resume.id, "message": "Resume uploaded successfully"}
+    return {"resume_id": resume.id, "filename": file.filename, "message": "Resume uploaded successfully"}
 
 @router.post("/match")
 def match_resume(resume_id: int, job_id: int, db: Session = Depends(get_db)):
@@ -69,7 +70,9 @@ def match_resume(resume_id: int, job_id: int, db: Session = Depends(get_db)):
     return {
         "analysis_id": analysis.id,
         "match_score": score,
-        "missing_skills": gaps.get("missing_skills", [])
+        "summary": gaps.get("summary", ""),
+        "missing_skills": gaps.get("missing_skills", []),
+        "recommendations": gaps.get("recommendations", [])
     }
 
 @router.post("/{resume_id}/analyze-and-fetch")
@@ -124,25 +127,29 @@ def analyze_and_fetch_jobs(resume_id: int, db: Session = Depends(get_db)):
 @router.post("/{resume_id}/match_custom")
 def match_custom_job(resume_id: int, request: CustomJDRequest, db: Session = Depends(get_db)):
     """Matches a resume against a specific custom job description pasted by the user."""
-    resume = db.query(Resume).filter(Resume.id == resume_id).first()
-    if not resume:
-        raise HTTPException(status_code=404, detail="Resume not found")
+    try:
+        resume = db.query(Resume).filter(Resume.id == resume_id).first()
+        if not resume:
+            raise HTTPException(status_code=404, detail="Resume not found")
+            
+        # Save the custom JD to DB to get an ID
+        job = JobPosting(
+            title=request.title[:100],
+            company=request.company[:100],
+            description=request.jd_text,
+            url=f"custom-paste-{uuid.uuid4()}"
+        )
+        db.add(job)
+        db.commit()
+        db.refresh(job)
         
-    # Save the custom JD to DB to get an ID
-    job = JobPosting(
-        title=request.title[:100],
-        company=request.company[:100],
-        description=request.jd_text,
-        url="custom-paste"
-    )
-    db.add(job)
-    db.commit()
-    db.refresh(job)
-    
-    # Rank them against the resume (will be just 1 job)
-    matches = ai_matcher.find_top_jobs(resume.parsed_text, [job], top_k=1)
-    
-    if matches:
-        matches[0]["short_description"] = job.description[:150] + "..." if job.description else "Custom Job Description"
+        # Rank them against the resume (will be just 1 job)
+        matches = ai_matcher.find_top_jobs(resume.parsed_text, [job], top_k=1)
         
-    return {"matches": matches}
+        if matches:
+            matches[0]["short_description"] = job.description[:150] + "..." if job.description else "Custom Job Description"
+            
+        return {"matches": matches}
+    except Exception as e:
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()}

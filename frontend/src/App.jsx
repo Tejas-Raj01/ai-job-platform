@@ -1,19 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Briefcase, ChevronRight, Search } from 'lucide-react';
+import { Sparkles, Briefcase, ChevronRight, Search, CheckCircle2 } from 'lucide-react';
 import FileUpload from './components/FileUpload';
 import JobSelector from './components/JobSelector';
 import ProcessingLoader from './components/ProcessingLoader';
 import AnalysisDashboard from './components/AnalysisDashboard';
 
 export default function App() {
-  const [resumeId, setResumeId] = useState(null);
+  const [resumeId, setResumeId] = useState(() => localStorage.getItem('nexus_resume_id') || null);
+  const [resumeName, setResumeName] = useState(() => localStorage.getItem('nexus_resume_name') || null);
   const [jobId, setJobId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState("");
   const [results, setResults] = useState(null);
   const [topJobs, setTopJobs] = useState([]);
   const [customJd, setCustomJd] = useState("");
+
+  // Persist resume ID so user doesn't have to upload again
+  useEffect(() => {
+    if (resumeId) {
+      localStorage.setItem('nexus_resume_id', resumeId);
+      if (resumeName) localStorage.setItem('nexus_resume_name', resumeName);
+    } else {
+      localStorage.removeItem('nexus_resume_id');
+      localStorage.removeItem('nexus_resume_name');
+      setTopJobs([]);
+      setJobId(null);
+      setResults(null);
+      setResumeName(null);
+    }
+  }, [resumeId, resumeName]);
 
   const handleCustomJdMatch = async () => {
     if (!resumeId || !customJd.trim()) return;
@@ -92,6 +108,7 @@ export default function App() {
       setResults(data);
     } catch (error) {
       console.error(error);
+      alert("Error: Analysis failed. Please check backend server logs.");
     } finally {
       setLoading(false);
     }
@@ -183,12 +200,35 @@ export default function App() {
                 </div>
 
                 <div className="glass-panel p-8 mb-8">
-                  <FileUpload onUploadComplete={(id) => {
-                    setResumeId(id);
-                    setResults(null);
-                    setTopJobs([]);
-                    setJobId(null);
-                  }} resumeId={resumeId} />
+                  {resumeId ? (
+                    <div className="flex flex-col items-center justify-center py-6 text-center border-2 border-dashed border-primary-500/30 rounded-xl bg-primary-500/5">
+                      <div className="w-12 h-12 rounded-full bg-primary-500/20 flex items-center justify-center mb-3">
+                        <CheckCircle2 className="w-6 h-6 text-primary-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-1">Active Resume</h3>
+                      <p className="text-sm text-zinc-400 mb-4">
+                        {resumeName ? (
+                          <span className="font-medium text-primary-400">{resumeName}</span>
+                        ) : (
+                          "Your profile is loaded and ready for analysis."
+                        )}
+                      </p>
+                      <button 
+                        onClick={() => setResumeId(null)}
+                        className="text-xs font-medium px-4 py-2 rounded-full bg-surface border border-surfaceBorder hover:bg-surfaceHover text-zinc-300 transition-colors"
+                      >
+                        Upload a Different Resume
+                      </button>
+                    </div>
+                  ) : (
+                    <FileUpload onUploadComplete={(id, name) => {
+                      setResumeId(id);
+                      setResumeName(name);
+                      setResults(null);
+                      setTopJobs([]);
+                      setJobId(null);
+                    }} resumeId={resumeId} />
+                  )}
                 </div>
 
                 <div className="flex justify-center mb-8">

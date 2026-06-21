@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     REDIS_URL: str = "redis://redis:6379/0"
     OPENAI_API_KEY: str = "dummy_key_to_prevent_crash"
+    GROQ_API_KEY: str = "dummy_groq_key_to_prevent_crash"
     JSEARCH_API_KEY: str = ""
 
     class Config:

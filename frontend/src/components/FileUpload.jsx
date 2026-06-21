@@ -55,7 +55,7 @@ export default function FileUpload({ onUploadComplete, resumeId }) {
       });
       if (!response.ok) throw new Error('Upload failed');
       const data = await response.json();
-      onUploadComplete(data.resume_id);
+      onUploadComplete(data.resume_id, data.filename);
     } catch (error) {
       console.error("Upload error:", error);
       alert("Failed to upload file. Is the backend running?");

@@ -4,7 +4,7 @@ import { CheckCircle2, XCircle, ArrowLeft, Lightbulb, Target } from 'lucide-reac
 
 export default function AnalysisDashboard({ results, onReset }) {
   if (!results) return null;
-  const { match_score, missing_skills, recommendations } = results;
+  const { match_score, missing_skills, recommendations, summary } = results;
 
   // Determine score color
   let scoreColor = "text-green-400";
@@ -73,9 +73,11 @@ export default function AnalysisDashboard({ results, onReset }) {
               <h3 className="text-sm font-semibold text-white tracking-wide">Summary</h3>
             </div>
             <p className="text-sm leading-relaxed text-zinc-300">
-              {match_score >= 80 ? "Excellent fit! You have most of the required skills for this role." : 
+              {summary || (
+               match_score >= 80 ? "Excellent fit! You have most of the required skills for this role." : 
                match_score >= 50 ? "Good potential, but there are some notable gaps in your skillset." : 
-               "Significant gaps detected. Consider upskilling before applying."}
+               "Significant gaps detected. Consider upskilling before applying."
+              )}
             </p>
           </div>
         </div>

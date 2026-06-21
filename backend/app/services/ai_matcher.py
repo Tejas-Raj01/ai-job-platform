@@ -1,19 +1,59 @@
 import json
 import re
-from langchain_community.embeddings import HuggingFaceEmbeddings
+import time
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 from app.core.config import settings
+
+MODELS = ["llama3-70b-8192", "llama3-8b-8192", "mixtral-8x7b-32768", "gemma-7b-it"]
+
+def clean_llm_json_output(text: str) -> str:
+    """Utility function using Regex to strip out markdown wrappers from the LLM's text response."""
+    # Strip out ```json and ``` using regex
+    cleaned = re.sub(r'```(?:json)?(.*?)```', r'\1', text, flags=re.DOTALL | re.IGNORECASE)
+    return cleaned.strip()
 
 class AIMatcher:
     def __init__(self):
         # We use a lightweight local model for vector embeddings to calculate similarity
         self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-        # We can configure this to use OpenAI or Gemini based on the available key
-        # Defaulting to Gemini as requested in system preferences
-        api_key = getattr(settings, "OPENAI_API_KEY", "dummy_key")
-        self.llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", google_api_key=api_key) if "AIza" in api_key else ChatGoogleGenerativeAI(model="gemini-1.5-pro", google_api_key="mock")
+        self.api_key = getattr(settings, "GROQ_API_KEY", "dummy_key")
+
+    def _execute_with_fallback(self, prompt_template: PromptTemplate, inputs: dict, enforce_json: bool = False) -> str:
+        """Iterates over predefined Groq models, falling back on 429 or other API errors."""
+        for i, model_name in enumerate(MODELS):
+            try:
+                # Configure JSON mode if required
+                model_kwargs = {"response_format": {"type": "json_object"}} if enforce_json else {}
+                
+                llm = ChatGroq(
+                    model=model_name,
+                    api_key=self.api_key,
+                    temperature=0.0,
+                    model_kwargs=model_kwargs
+                )
+                chain = prompt_template | llm
+                response = chain.invoke(inputs)
+                return response.content
+            except Exception as e:
+                err_str = str(e)
+                print(f"Model {model_name} failed: {err_str}")
+                
+                # If we exhausted all models, raise an error to be caught by the caller
+                if i == len(MODELS) - 1:
+                    raise RuntimeError(f"All Groq models failed. Last error: {err_str}")
+                    
+                # Check if it's a rate limit or quota error
+                if "429" in err_str or "rate limit" in err_str.lower() or "quota" in err_str.lower():
+                    print(f"Model {model_name} limit reached, falling back to {MODELS[i+1]}")
+                else:
+                    print(f"Model {model_name} encountered an error, falling back to {MODELS[i+1]}")
+                
+                # Add a small delay to avoid spamming immediate requests on non-rate-limit errors
+                time.sleep(1)
+                continue
 
     def calculate_similarity(self, resume_text: str, jd_text: str) -> float:
         """
@@ -53,9 +93,8 @@ Resume:
 Respond ONLY with the search string and nothing else:'''
         )
         try:
-            chain = prompt | self.llm
-            response = chain.invoke({"resume": resume_text[:5000]})
-            return response.content.strip().strip('"').replace('\n', '')
+            content = self._execute_with_fallback(prompt, {"resume": resume_text[:5000]}, enforce_json=False)
+            return content.strip().strip('"').replace('\n', '')
         except Exception as e:
             print(f"Keyword extraction error: {e}")
             return "Software Engineer"
@@ -102,10 +141,15 @@ Respond ONLY with the search string and nothing else:'''
         prompt = PromptTemplate(
             input_variables=["resume", "jd"],
             template='''Compare this Resume with this JD. What specific keywords, projects, or phrasing are missing from the resume to make it a 100% match for this exact job?
-Return the result strictly as a valid JSON object with exactly two keys:
-1. "missing_skills": a list of strings (short, specific missing keywords/skills).
-2. "recommendations": a list of strings (actionable advice to improve the resume).
-Do NOT include markdown formatting like ```json. Return ONLY the raw JSON string.
+
+Return the result strictly as a valid JSON object matching the exact schema below:
+{{
+  "summary": "Short 2-sentence summary of the fit.",
+  "missing_skills": ["Skill 1", "Skill 2", "Skill 3"],
+  "recommendations": ["Actionable tip 1", "Actionable tip 2"]
+}}
+
+CRITICAL INSTRUCTION: Return ONLY the raw JSON object. Do NOT wrap the output in markdown code blocks (e.g., no ```json). Do NOT include any conversational text before or after.
 
 Resume:
 {resume}
@@ -114,27 +158,33 @@ Job Description:
 {jd}'''
         )
         try:
-            chain = prompt | self.llm
-            response = chain.invoke({"resume": resume_text[:5000], "jd": jd_text[:5000]})
-            text = response.content.strip()
+            content = self._execute_with_fallback(prompt, {"resume": resume_text[:5000], "jd": jd_text[:5000]}, enforce_json=True)
+            print(f"--- RAW LLM OUTPUT ---\n{content}\n----------------------")
+            text = clean_llm_json_output(content)
             
             # Robust JSON extraction using regex
             json_match = re.search(r'\{.*\}', text, re.DOTALL)
-            if json_match:
-                json_str = json_match.group(0)
+            json_str = json_match.group(0) if json_match else text
+            
+            try:
                 result = json.loads(json_str)
-                return {
-                    "missing_skills": result.get("missing_skills", []),
-                    "recommendations": result.get("recommendations", [])
-                }
-            else:
-                raise ValueError(f"No JSON object found in response: {text[:100]}...")
+            except json.JSONDecodeError as json_err:
+                print(f"JSONDecodeError: Failed to parse LLM response: {json_err}")
+                print(f"Raw string attempted: {json_str}")
+                raise
+                
+            return {
+                "summary": result.get("summary", "No summary provided."),
+                "missing_skills": result.get("missing_skills", []),
+                "recommendations": result.get("recommendations", [])
+            }
                 
         except Exception as e:
             print(f"LLM gap analysis error: {e}")
             return {
-                "missing_skills": ["Could not parse missing skills from AI.", "Check the console logs for exact error."],
-                "recommendations": ["Error analyzing gaps. The job description might be too long or the AI response was malformed."]
+                "summary": "Analysis completed, but response formatting failed. Please try analyzing again.",
+                "missing_skills": ["Error parsing skills"],
+                "recommendations": ["Error parsing recommendations"]
             }
 
 ai_matcher = AIMatcher()
