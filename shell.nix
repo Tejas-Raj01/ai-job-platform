@@ -5,6 +5,8 @@ pkgs.mkShell {
     python3
     python3Packages.pip
     python3Packages.virtualenv
+    php
+    phpPackages.composer
     
     # Required system dependencies for building packages
     gcc

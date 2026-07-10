@@ -1,9 +1,9 @@
-version: '3.8'
 
 services:
   db:
     image: postgres:15-alpine
     container_name: job_platform_db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: jobuser
       POSTGRES_PASSWORD: jobpassword
@@ -21,6 +21,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: job_platform_redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
 
@@ -28,40 +29,57 @@ services:
     build:
       context: ./backend
     container_name: job_platform_backend
+    restart: unless-stopped
     volumes:
       - ./backend:/app
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://jobuser:jobpassword@db:5432/jobplatform
-      - REDIS_URL=redis://redis:6379/0
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=jobplatform
+      - DB_USERNAME=jobuser
+      - DB_PASSWORD=jobpassword
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QUEUE_CONNECTION=redis
       - GROQ_API_KEY=${GROQ_API_KEY}
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: php artisan serve --host=0.0.0.0 --port=8000
 
-  celery_worker:
+  queue_worker:
     build:
       context: ./backend
-    container_name: job_platform_celery_worker
+    container_name: job_platform_queue_worker
+    restart: unless-stopped
     volumes:
       - ./backend:/app
     environment:
-      - DATABASE_URL=postgresql://jobuser:jobpassword@db:5432/jobplatform
-      - REDIS_URL=redis://redis:6379/0
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=jobplatform
+      - DB_USERNAME=jobuser
+      - DB_PASSWORD=jobpassword
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QUEUE_CONNECTION=redis
       - GROQ_API_KEY=${GROQ_API_KEY}
     depends_on:
       - backend
       - redis
-    command: celery -A app.worker.celery_app worker --loglevel=info
+    command: php artisan queue:work
 
   frontend:
     build:
       context: ./frontend
     container_name: job_platform_frontend
+    restart: unless-stopped
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -69,6 +87,7 @@ services:
       - "5173:5173"
     environment:
       - VITE_API_URL=http://localhost:8000
+      - PORT=5173
     depends_on:
       - backend
 
