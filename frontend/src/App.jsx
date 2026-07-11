@@ -118,18 +118,30 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background font-sans text-zinc-300">
-      <div className="absolute top-0 inset-x-0 h-[500px] pointer-events-none overflow-hidden">
-        <div className="absolute top-[-250px] left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary-600/20 blur-[120px] rounded-full opacity-50 mix-blend-screen" />
+      {/* Animated Immersive Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-600/20 blur-[120px] rounded-full mix-blend-screen animate-blob" />
+        <div className="absolute top-[20%] right-[-10%] w-[50%] h-[50%] bg-accent-600/20 blur-[120px] rounded-full mix-blend-screen animate-blob" style={{ animationDelay: '2s' }} />
+        <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] bg-teal-600/10 blur-[150px] rounded-full mix-blend-screen animate-blob" style={{ animationDelay: '4s' }} />
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+')] opacity-20 mix-blend-overlay"></div>
       </div>
 
       <nav className="relative z-10 border-b border-surfaceBorder bg-background/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-primary-600 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-500/20">
-              <Sparkles className="w-5 h-5 text-white" />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 via-accent-500 to-teal-400 p-[1px] shadow-lg shadow-primary-500/20">
+              <div className="w-full h-full rounded-xl bg-surface/90 flex items-center justify-center backdrop-blur-md">
+                <Sparkles className="w-5 h-5 text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-accent-400" stroke="url(#gradient)" />
+                <svg width="0" height="0" className="absolute">
+                  <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop stopColor="#60A5FA" offset="0%" />
+                    <stop stopColor="#A78BFA" offset="100%" />
+                  </linearGradient>
+                </svg>
+              </div>
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">
-              Nexus<span className="font-normal text-zinc-400">Match</span>
+            <span className="text-2xl font-bold tracking-tight text-white font-['Outfit']">
+              Nexus<span className="font-light text-zinc-400">Match</span>
             </span>
           </div>
           <div className="text-xs font-medium px-3 py-1 rounded-full bg-surface border border-surfaceBorder text-zinc-400">
@@ -192,16 +204,27 @@ export default function App() {
                 exit={{ opacity: 0, y: -20 }}
                 className="h-full flex flex-col justify-center max-w-2xl mx-auto w-full"
               >
-                <div className="text-center mb-10">
-                  <h1 className="text-4xl font-bold text-white tracking-tight mb-3">
+                <div className="text-center mb-12">
+                  <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-sm font-medium mb-6"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>AI-Powered Matching Engine</span>
+                  </motion.div>
+                  <h1 className="text-5xl md:text-6xl font-extrabold text-white tracking-tight mb-4 leading-tight">
                     Discover <span className="gradient-text">Your Best Fit</span>
                   </h1>
-                  <p className="text-zinc-400">
-                    Upload your resume and our AI will automatically scan thousands of job listings to find and rank your perfect matches.
+                  <p className="text-lg text-zinc-400 max-w-xl mx-auto font-light">
+                    Upload your resume and let our intelligent engine scan thousands of roles to find your perfect match.
                   </p>
                 </div>
 
-                <div className="glass-panel p-8 mb-8">
+                <div className="glass-panel p-8 mb-8 relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-500 via-accent-500 to-teal-500 rounded-[24px] opacity-20 group-hover:opacity-40 transition duration-500 blur-sm pointer-events-none"></div>
+                  <div className="relative">
                   {resumeId ? (
                     <div className="flex flex-col items-center justify-center py-6 text-center border-2 border-dashed border-primary-500/30 rounded-xl bg-primary-500/5">
                       <div className="w-12 h-12 rounded-full bg-primary-500/20 flex items-center justify-center mb-3">
@@ -231,6 +254,7 @@ export default function App() {
                       setJobId(null);
                     }} resumeId={resumeId} />
                   )}
+                  </div>
                 </div>
 
                 <div className="flex justify-center mb-8">
