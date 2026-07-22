@@ -16,9 +16,21 @@ class ResumeController extends Controller
 {
     public function upload(Request $request, PdfParserService $parser)
     {
+        if (!$request->hasFile('file')) {
+            return response()->json([
+                'message' => 'No file uploaded or file exceeds server upload size limit.'
+            ], 422);
+        }
+
+        $file = $request->file('file');
+        if (!$file->isValid()) {
+            return response()->json([
+                'message' => 'Uploaded file is invalid or failed upload check.'
+            ], 422);
+        }
+
         $request->validate([
             'user_id' => 'required',
-            'file' => 'required|file'
         ]);
 
         $file = $request->file('file');
