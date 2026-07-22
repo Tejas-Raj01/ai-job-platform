@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UploadCloud, FileText, CheckCircle2, Loader2, X } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, Loader2, X, Sparkles } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
