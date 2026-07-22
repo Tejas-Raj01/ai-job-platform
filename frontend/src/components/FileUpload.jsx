@@ -49,18 +49,28 @@ export default function FileUpload({ onUploadComplete, resumeId }) {
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('user_id', '1');
 
     try {
       const response = await fetch(`${API_URL}/api/resumes/upload?user_id=1`, {
         method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+        },
         body: formData,
       });
-      if (!response.ok) throw new Error('Upload failed');
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errMsg = errorData?.message || (errorData?.errors ? Object.values(errorData.errors).flat().join(', ') : 'Upload failed');
+        throw new Error(errMsg);
+      }
+
       const data = await response.json();
       onUploadComplete(data.resume_id, data.filename);
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Failed to upload file. Is the backend running?");
+      alert(`Upload failed: ${error.message}`);
     } finally {
       setUploading(false);
     }

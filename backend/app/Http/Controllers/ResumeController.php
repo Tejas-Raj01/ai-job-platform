@@ -17,8 +17,8 @@ class ResumeController extends Controller
     public function upload(Request $request, PdfParserService $parser)
     {
         $request->validate([
-            'user_id' => 'required|integer',
-            'file' => 'required|file|mimes:pdf'
+            'user_id' => 'required',
+            'file' => 'required|file'
         ]);
 
         $file = $request->file('file');
