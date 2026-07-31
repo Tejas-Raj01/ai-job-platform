@@ -4,7 +4,23 @@ import { CheckCircle2, XCircle, ArrowLeft, Lightbulb, Target, Trophy } from 'luc
 
 export default function AnalysisDashboard({ results, onReset }) {
   if (!results) return null;
-  const { match_score, missing_skills, recommendations, summary } = results;
+  const { match_score = 0, missing_skills = [], recommendations = [], summary = '' } = results || {};
+
+  const validMissingSkills = missing_skills 
+    ? missing_skills.filter(s => s && !s.toLowerCase().includes('error parsing'))
+    : [];
+
+  const validRecommendations = recommendations 
+    ? recommendations.filter(r => r && !r.toLowerCase().includes('error parsing'))
+    : [];
+
+  const cleanSummary = (summary && !summary.includes("formatting failed") && !summary.includes("Error parsing"))
+    ? summary
+    : (match_score >= 80 
+        ? "Excellent fit! You have most of the required skills for this role. Your experience aligns closely with the job description." 
+        : match_score >= 50 
+          ? "Good potential, but there are some notable gaps in your skillset. Focusing on these areas will improve your chances." 
+          : "Significant gaps detected. Consider upskilling or targeting key missing technical requirements before applying.");
 
   // Determine score color
   let scoreColor = "text-teal-400";
@@ -82,15 +98,11 @@ export default function AnalysisDashboard({ results, onReset }) {
             <h3 className="text-lg font-semibold text-white tracking-wide font-['Outfit']">Executive Summary</h3>
           </div>
           <p className="text-base leading-relaxed text-zinc-300">
-            {summary || (
-             match_score >= 80 ? "Excellent fit! You have most of the required skills for this role. Your experience aligns closely with the job description." : 
-             match_score >= 50 ? "Good potential, but there are some notable gaps in your skillset. Focusing on these areas will improve your chances." : 
-             "Significant gaps detected. Consider upskilling or targeting a different level role before applying."
-            )}
+            {cleanSummary}
           </p>
           <div className="mt-auto pt-6 flex gap-2">
              <span className="text-xs px-2 py-1 bg-surface border border-surfaceBorder rounded-md text-zinc-400">AI Generated</span>
-             <span className="text-xs px-2 py-1 bg-surface border border-surfaceBorder rounded-md text-zinc-400">Gemini 1.5 Pro</span>
+             <span className="text-xs px-2 py-1 bg-surface border border-surfaceBorder rounded-md text-zinc-400">Groq LLM</span>
           </div>
         </motion.div>
 
@@ -104,9 +116,9 @@ export default function AnalysisDashboard({ results, onReset }) {
             <h3 className="text-lg font-semibold text-white font-['Outfit']">Missing Skills</h3>
           </div>
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
-            {missing_skills && missing_skills.length > 0 ? (
+            {validMissingSkills.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {missing_skills.map((skill, i) => (
+                {validMissingSkills.map((skill, i) => (
                   <motion.span 
                     initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4 + (i * 0.05) }}
                     key={i} 
@@ -135,9 +147,9 @@ export default function AnalysisDashboard({ results, onReset }) {
             <h3 className="text-lg font-semibold text-white font-['Outfit']">Actionable Recommendations</h3>
           </div>
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-            {recommendations && recommendations.length > 0 ? (
+            {validRecommendations.length > 0 ? (
               <ul className="space-y-4">
-                {recommendations.map((rec, i) => (
+                {validRecommendations.map((rec, i) => (
                   <motion.li 
                     initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 + (i * 0.1) }}
                     key={i} 
