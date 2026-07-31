@@ -7,24 +7,23 @@ An end-to-end, high-performance platform designed to parse PDF resumes, match ca
 ## 🏗️ System Architecture
 
 - **Frontend**: React 19 (Vite), Tailwind CSS v3, Framer Motion, Lucide Icons
-- **Backend API**: Laravel 11/13 (PHP 8.3+), Eloquent ORM, RESTful JSON Endpoints
+- **Backend API**: Laravel 13 (PHP 8.3), Eloquent ORM, RESTful JSON Endpoints
 - **Database**: PostgreSQL 15
-- **Async Processing & Queues**: Laravel Queues with Redis 7 driver
+- **Async Processing & Queues**: Asynchronous background job processing utilizing Laravel Queues and Redis 7 to ensure non-blocking REST API responses.
 - **AI / NLP Engine**: 
-  - **LLM Provider**: Groq API (`llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, Mixtral) with automatic model fallback chains
-  - **Semantic Vector Scoring**: Hybrid TF-IDF keyword extraction & Cosine Similarity vector matching
-- **PDF Extraction**: `smalot/pdfparser`
-- **Web Scraping**: Symfony DomCrawler & Guzzle HTTP background worker jobs
+  - **LLM Provider**: Integration with Groq LLM APIs utilizing dynamic model discovery and multi-model auto-fallback chains for structured JSON resume gap analysis.
+  - **Semantic Vector Scoring**: Term Frequency (TF) Cosine Similarity vector matching engine
+- **Parsing & Scraping**: Symfony DomCrawler for job scraping and Smalot PDF parser for resume extraction.
 
 ---
 
 ## ✨ Key Features
 
-1. **PDF Resume Parsing**: Seamless drag-and-drop PDF upload with robust text extraction (supports files up to 64MB).
-2. **Hybrid AI Matchmaking**: Combines TF-IDF vector space model with LLM evaluation to provide precise percentage match scores.
-3. **AI Gap Analysis & Resume Recommendations**: Generates actionable feedback identifying missing skills, experience gaps, and bullet point enhancements.
+1. **PDF Resume Parsing**: Seamless drag-and-drop PDF upload with Smalot PDF parser for resume extraction.
+2. **Hybrid AI Matchmaking**: Combines Term Frequency (TF) Cosine Similarity vector matching engine with LLM evaluation to provide precise percentage match scores.
+3. **AI Gap Analysis & Resume Recommendations**: Integration with Groq LLM APIs utilizing dynamic model discovery and multi-model auto-fallback chains for structured JSON resume gap analysis.
 4. **Custom Job Description Comparison**: Compare uploaded resumes directly against arbitrary user-provided job descriptions.
-5. **Asynchronous Web Scraping**: Background worker queues that scrape and ingest job listings without blocking main thread execution.
+5. **Asynchronous Background Job Processing**: Asynchronous background job processing utilizing Laravel Queues and Redis to ensure non-blocking REST API responses.
 6. **Modern Immersive Dashboard**: Modern bento-grid layout featuring responsive design, dark mode aesthetics, dynamic progress rings, and smooth micro-animations.
 
 ---
