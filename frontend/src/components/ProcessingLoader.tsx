@@ -1,0 +1,7 @@
+import { motion } from 'framer-motion';
+import { BrainCircuit } from 'lucide-react';
+import type { ProcessingLoaderProps } from '../types';
+
+export default function ProcessingLoader({ message }: ProcessingLoaderProps) {
+  return <div className="flex flex-col items-center justify-center space-y-10 p-10 max-w-md w-full"><div className="relative w-40 h-40 flex items-center justify-center"><motion.div animate={{ rotate: 360 }} transition={{ duration: 8, repeat: Infinity, ease: 'linear' }} className="absolute inset-0 rounded-full border border-primary-500/40 border-t-teal-400/80" /><motion.div animate={{ rotate: -360 }} transition={{ duration: 12, repeat: Infinity, ease: 'linear' }} className="absolute inset-4 rounded-full border border-accent-500/30 border-b-accent-400/80" /><motion.div animate={{ y: [-5, 5, -5] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }} className="relative z-10 w-16 h-16 rounded-2xl glass-panel flex items-center justify-center"><BrainCircuit className="w-8 h-8 text-white" /></motion.div></div><div className="glass-card w-full p-6 text-center space-y-4"><h3 className="text-xl font-semibold text-white">AI engine processing</h3><p className="text-sm text-zinc-400">{message}</p><div className="w-full h-1 bg-zinc-800/50 rounded-full overflow-hidden"><motion.div className="h-full bg-gradient-to-r from-primary-400 via-accent-400 to-teal-400" initial={{ width: '0%' }} animate={{ width: '100%' }} transition={{ duration: 15, ease: 'circOut' }} /></div></div></div>;
+}

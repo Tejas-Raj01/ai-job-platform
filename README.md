@@ -7,23 +7,22 @@ An end-to-end, high-performance platform designed to parse PDF resumes, match ca
 ## 🏗️ System Architecture
 
 - **Frontend**: React 19 (Vite), Tailwind CSS v3, Framer Motion, Lucide Icons
-- **Backend API**: Laravel 13 (PHP 8.3), Eloquent ORM, RESTful JSON Endpoints
-- **Database**: PostgreSQL 15
-- **Async Processing & Queues**: Asynchronous background job processing utilizing Laravel Queues and Redis 7 to ensure non-blocking REST API responses.
+- **Backend API**: FastAPI (Python 3.12), SQLite, RESTful JSON endpoints
+- **Database**: SQLite by default, configurable with `DATABASE_PATH`
 - **AI / NLP Engine**: 
   - **LLM Provider**: Integration with Groq LLM APIs utilizing dynamic model discovery and multi-model auto-fallback chains for structured JSON resume gap analysis.
   - **Semantic Vector Scoring**: Term Frequency (TF) Cosine Similarity vector matching engine
-- **Parsing & Scraping**: Symfony DomCrawler for job scraping and Smalot PDF parser for resume extraction.
+- **Parsing & Scraping**: HTTPX for job search and pypdf for resume extraction.
 
 ---
 
 ## ✨ Key Features
 
-1. **PDF Resume Parsing**: Seamless drag-and-drop PDF upload with Smalot PDF parser for resume extraction.
+1. **PDF Resume Parsing**: Seamless drag-and-drop PDF upload with pypdf for resume extraction.
 2. **Hybrid AI Matchmaking**: Combines Term Frequency (TF) Cosine Similarity vector matching engine with LLM evaluation to provide precise percentage match scores.
 3. **AI Gap Analysis & Resume Recommendations**: Integration with Groq LLM APIs utilizing dynamic model discovery and multi-model auto-fallback chains for structured JSON resume gap analysis.
 4. **Custom Job Description Comparison**: Compare uploaded resumes directly against arbitrary user-provided job descriptions.
-5. **Asynchronous Background Job Processing**: Asynchronous background job processing utilizing Laravel Queues and Redis to ensure non-blocking REST API responses.
+5. **Provider Fallbacks**: Local matching and fallback job data keep the workflow usable without optional provider keys.
 6. **Modern Immersive Dashboard**: Modern bento-grid layout featuring responsive design, dark mode aesthetics, dynamic progress rings, and smooth micro-animations.
 
 ---
@@ -32,20 +31,17 @@ An end-to-end, high-performance platform designed to parse PDF resumes, match ca
 
 ```text
 ai-job-platform/
-├── backend/                  # Laravel REST API application
-│   ├── app/
-│   │   ├── Http/Controllers/ # Resume & Job endpoints
-│   │   ├── Jobs/             # Background web scraping jobs
-│   │   ├── Models/           # Eloquent Models (User, Resume, JobPosting)
-│   │   └── Services/         # AiMatcherService, JobSearcherService, PdfParserService
-│   ├── database/             # Migrations & schema definitions
-│   └── routes/api.php        # API Route definitions
-├── frontend/                 # React (Vite) application
+├── backend/                  # FastAPI Python application
+│   ├── main.py               # API routes, matching, parsing, and provider clients
+│   ├── requirements.txt      # Python dependencies
+│   └── Dockerfile
+├── frontend/                 # React + TypeScript (Vite) application
 │   ├── src/
-│   │   ├── components/       # Bento grid dashboard, dropzone, match rings
-│   │   └── App.jsx           # Main UI container
+│   │   ├── components/       # Typed dashboard and upload components
+│   │   ├── types.ts          # Shared API models
+│   │   └── App.tsx           # Main UI container
 │   └── tailwind.config.js    # Styling design system
-├── docker-compose.yml        # Orchestration for PostgreSQL, Redis, Laravel, Queue Worker & Vite
+├── docker-compose.yml        # Orchestration for FastAPI and Vite
 └── features.md               # Technical blueprint & feature targets
 ```
 
@@ -88,17 +84,16 @@ ai-job-platform/
 
 ## 💻 Local Development Setup
 
-### Backend (Laravel)
+### Backend (Python)
 ```bash
 cd backend
-composer install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate
-php artisan serve --port=8000
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port=8000
 ```
 
-### Frontend (React / Vite)
+### Frontend (React / TypeScript / Vite)
 ```bash
 cd frontend
 npm install
