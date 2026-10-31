@@ -49,6 +49,15 @@ venv.bak/
 chroma_db/
 postgres-data/
 
+# Local planning documents
+features.md
+interview_prep.md
+
+# Test and coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
 # OS Files
 .DS_Store
 Thumbs.db

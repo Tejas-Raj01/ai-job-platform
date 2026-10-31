@@ -42,7 +42,6 @@ ai-job-platform/
 │   │   └── App.tsx           # Main UI container
 │   └── tailwind.config.js    # Styling design system
 ├── docker-compose.yml        # Orchestration for FastAPI and Vite
-└── features.md               # Technical blueprint & feature targets
 ```
 
 ---
@@ -99,4 +98,13 @@ cd frontend
 npm install
 npm run dev
 ```
+
+### Testing
+
+```bash
+cd backend
+python -m pytest
+```
+
+The repository CI workflow runs backend tests, frontend linting, and the frontend production build on every push and pull request.
 
